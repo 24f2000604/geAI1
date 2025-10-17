@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Code Deployment</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                🤖 LLM Code Deployment
+            </h1>
+            <p class="text-gray-300 text-lg">Generate and execute Python code using AI</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Left Column: Input & Generate -->
+            <div class="space-y-6">
+                <!-- Prompt Input Card -->
+                <div class="bg-gray-800 rounded-lg shadow-2xl p-6">
+                    <h2 class="text-2xl font-semibold mb-4 text-blue-400">📝 Enter Your Prompt</h2>
+                    <textarea 
+                        id="promptInput" 
+                        rows="6" 
+                        class="w-full p-4 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        placeholder="e.g., Write a Python function to calculate the factorial of a number"
+                    ></textarea>
+                    
+                    <button 
+                        onclick="generateCode()" 
+                        class="mt-4 w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 shadow-lg"
+                    >
+                        ✨ Generate Code
+                    </button>
+                </div>
+
+                <!-- Generated Code Output Card -->
+                <div class="bg-gray-800 rounded-lg shadow-2xl p-6">
+                    <h2 class="text-2xl font-semibold mb-4 text-green-400">💻 Generated Code</h2>
+                    <pre 
+                        id="codeOutput" 
+                        class="w-full p-4 bg-gray-900 text-green-400 rounded-lg border border-gray-700 overflow-x-auto min-h-[200px] font-mono text-sm"
+                    >// Your generated code will appear here...</pre>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <button 
+                            onclick="deployCode()" 
+                            class="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 shadow-lg"
+                        >
+                            🚀 Execute Code
+                        </button>
+                        <button 
+                            onclick="deployToGitHub()" 
+                            class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 shadow-lg"
+                        >
+                            📦 Deploy to GitHub Pages
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Execution Output -->
+            <div class="space-y-6">
+                <!-- Execution Output Card -->
+                <div class="bg-gray-800 rounded-lg shadow-2xl p-6 h-full">
+                    <h2 class="text-2xl font-semibold mb-4 text-yellow-400">📊 Execution Output</h2>
+                    <pre 
+                        id="deploymentOutput" 
+                        class="w-full p-4 bg-gray-900 text-yellow-400 rounded-lg border border-gray-700 overflow-x-auto min-h-[400px] lg:min-h-[600px] font-mono text-sm"
+                    >// Execution results will appear here...</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusMessage" class="mt-6 text-center text-lg font-semibold"></div>
+
+        <!-- Footer -->
+        <footer class="mt-12 text-center text-gray-400">
+            <p>Powered by OpenAI & Flask | Built with ❤️ and Tailwind CSS</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Function to generate code from the LLM
+        async function generateCode() {
+            const promptInput = document.getElementById('promptInput');
+            const codeOutput = document.getElementById('codeOutput');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            const prompt = promptInput.value.trim();
+            
+            if (!prompt) {
+                statusMessage.textContent = '⚠️ Please enter a prompt.';
+                statusMessage.className = 'mt-6 text-center text-lg font-semibold text-red-500';
+                return;
+            }
+            
+            // Show loading state
+            codeOutput.textContent = '⏳ Generating code...';
+            statusMessage.textContent = '🔄 Processing your request...';
+            statusMessage.className = 'mt-6 text-center text-lg font-semibold text-blue-400';
+            
+            try {
+                const response = await fetch('/generate_code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+                
+                const data = await response.json();
+                
+                if (data.code) {
+                    codeOutput.textContent = data.code;
+                    statusMessage.textContent = `✅ ${data.message}`;
+                    statusMessage.className = 'mt-6 text-center text-lg font-semibold text-green-400';
+                } else {
+                    codeOutput.textContent = 'Error: No code generated.';
+                    statusMessage.textContent = '❌ Failed to generate code.';
+                    statusMessage.className = 'mt-6 text-center text-lg font-semibold text-red-500';
+                }
+            } catch (error) {
+                codeOutput.textContent = `Error: ${error.message}`;
+                statusMessage.textContent = '❌ Network error occurred.';
+                statusMessage.className = 'mt-6 text-center text-lg font-semibold text-red-500';
+            }
+        }
+        
+        // Function to deploy (execute) the generated code
+        async function deployCode() {
+            const codeOutput = document.getElementById('codeOutput');
+            const deploymentOutput = document.getElementById('deploymentOutput');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            const code = codeOutput.textContent.trim();
+            
+            if (!code || code.startsWith('//') || code.startsWith('⏳')) {
+                statusMessage.textContent = '⚠️ No code to execute. Generate code first.';
+                statusMessage.className = 'mt-6 text-center text-lg font-semibold text-red-500';
+                return;
+            }
+            
+            // Show loading state
+            deploymentOutput.textContent = '⏳ Executing code...';
+            statusMessage.textContent = '🚀 Running your code...';
+            statusMessage.className = 'mt-6 text-center text-lg font-semibold text-blue-400';
+            
+            try {
+                const response = await fetch('/deploy_code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+                
+                const data = await response.json();
+                
+                if (data.output) {
+                    deploymentOutput.textContent = data.output;
+                    
+                    // Set status based on execution result
+                    if (data.output.includes('Successful')) {
+                        statusMessage.textContent = '✅ Code executed successfully!';
+                        statusMessage.className = 'mt-6 text-center text-lg font-semibold text-green-400';
+                    } else {
+                        statusMessage.textContent = '⚠️ Execution completed with errors.';
+                        statusMessage.className = 'mt-6 text-center text-lg font-semibold text-yellow-400';
+                    }
+                } else {
+                    deploymentOutput.textContent = 'Error: No output received.';
+                    statusMessage.textContent = '❌ Execution failed.';
+                    statusMessage.className = 'mt-6 text-center text-lg font-semibold text-red-500';
+                }
+            } catch (error) {
+                deploymentOutput.textContent = `Error: ${error.message}`;
+                statusMessage.textContent = '❌ Network error occurred.';
+                statusMessage.className = 'mt-6 text-center text-lg font-semibold text-red-500';
+            }
+        }
+        
+        // Function to deploy to GitHub Pages (Automated)
+        async function deployToGitHub() {
+            const codeOutput = document.getElementById('codeOutput');
+            const deploymentOutput = document.getElementById('deploymentOutput');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            const code = codeOutput.textContent.trim();
+            
+            if (!code || code.startsWith('//') || code.startsWith('⏳')) {
+                statusMessage.textContent = '⚠️ No code to deploy. Generate code first.';
+                statusMessage.className = 'mt-6 text-center text-lg font-semibold text-red-500';
+                return;
+            }
+            
+            // Show loading state with animation
+            deploymentOutput.textContent = '⏳ Starting automated deployment...\n\n📦 Creating files...\n💾 Committing to Git...\n🚀 Pushing to GitHub...';
+            statusMessage.textContent = '� Automated deployment in progress...';
+            statusMessage.className = 'mt-6 text-center text-lg font-semibold text-blue-400 animate-pulse';
+            
+            try {
+                const response = await fetch('/deploy_to_github', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        code: code,
+                        auto_push: true  // Enable automated push
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Display deployment log
+                let output = '';
+                if (data.log) {
+                    output = data.log.join('\n');
+                }
+                
+                if (data.instructions) {
+                    output += '\n\n' + data.instructions;
+                }
+                
+                if (data.error) {
+                    output += '\n\n❌ Error Details:\n' + data.error;
+                }
+                
+                deploymentOutput.textContent = output;
+                
+                // Set status based on result
+                if (data.status === 'success') {
+                    statusMessage.textContent = '🎉 Successfully deployed to GitHub Pages!';
+                    statusMessage.className = 'mt-6 text-center text-lg font-semibold text-green-400';
+                } else if (data.status === 'partial') {
+                    statusMessage.textContent = '⚠️ Partial deployment - manual steps required';
+                    statusMessage.className = 'mt-6 text-center text-lg font-semibold text-yellow-400';
+                } else {
+                    statusMessage.textContent = '❌ Deployment failed';
+                    statusMessage.className = 'mt-6 text-center text-lg font-semibold text-red-500';
+                }
+            } catch (error) {
+                deploymentOutput.textContent = `❌ Network Error: ${error.message}`;
+                statusMessage.textContent = '❌ Connection error occurred.';
+                statusMessage.className = 'mt-6 text-center text-lg font-semibold text-red-500';
+            }
+        }
+        
+        // Allow Enter key to submit (optional enhancement)
+        document.getElementById('promptInput').addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'Enter') {
+                generateCode();
+            }
+        });
+    </script>
+</body>
+</html>
